@@ -40,7 +40,7 @@ func NewClient(token string) *Slacker {
 type Slacker struct {
 	Client         *slack.Client
 	rtm            *slack.RTM
-	botCommands    []*BotCommand
+	botCommands    []*SlackerCommand
 	initHandler    func()
 	errorHandler   func(err string)
 	defaultHandler func(request *Request, response ResponseWriter)
@@ -62,8 +62,8 @@ func (s *Slacker) Default(defaultHandler func(request *Request, response Respons
 }
 
 // Command define a new command and append it to the list of existing commands
-func (s *Slacker) Command(usage string, description string, handler func(request *Request, response ResponseWriter)) {
-	s.botCommands = append(s.botCommands, NewBotCommand(usage, description, handler))
+func (s *Slacker) Command(usage string, description string, handler func(request *Request, response ResponseWriter), showInHelp bool) {
+	s.botCommands = append(s.botCommands, NewBotCommand(usage, description, handler, showInHelp))
 }
 
 // Listen receives events from Slack and each is handled as needed
@@ -131,6 +131,9 @@ func (s *Slacker) handleHelp(channel string) {
 
 	helpMessage := empty
 	for _, command := range s.botCommands {
+		if !command.showInHelp {
+			continue
+		}
 		tokens := strings.Split(command.usage, space)
 		for _, token := range tokens {
 			if commander.IsParameter(token) {
